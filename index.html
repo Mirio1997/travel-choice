@@ -19,7 +19,7 @@
     .card-container { display: flex; flex-direction: column; gap: 15px; flex-grow: 1; }
     .card { border: 2px solid #e0e0e0; border-radius: 12px; overflow: hidden; cursor: pointer; transition: 0.2s; background: #fff; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
     .card:active { border-color: #4a90e2; transform: scale(0.98); }
-    .card img { width: 100%; height: 180px; object-fit: cover; display: block; }
+    .card img { width: 100%; height: 180px; object-fit: cover; display: block; background-color: #eee; }
     .card-content { padding: 16px; text-align: center; }
     .card-title { font-size: 24px; margin: 0 0 10px 0; color: #333; font-weight: bold; }
     
@@ -85,34 +85,33 @@
   </div>
 
   <script>
-    // 20 個景點的資料庫，包含 TAG 分類與初始 Elo 積分
+    // 資料庫：已經將 img 欄位全部更新為標準化的英文檔名
     let spots = [
-      { id: 1, name: "大安森林公園", img: "https://images.unsplash.com/photo-1574259461536-231a54508480?auto=format&fit=crop&w=600&q=80", tags: ["自然生態", "散步野餐", "市區綠地"], rating: 1200, matches: 0 },
-      { id: 2, name: "象山步道", img: "https://images.unsplash.com/photo-1543323067-27e163b0a2c0?auto=format&fit=crop&w=600&q=80", tags: ["健行步道", "自然生態", "台北夜景"], rating: 1200, matches: 0 },
-      { id: 3, name: "劍潭山步道", img: "https://images.unsplash.com/photo-1628178822097-f82debf13110?auto=format&fit=crop&w=600&q=80", tags: ["健行步道", "城市景觀", "自然生態"], rating: 1200, matches: 0 },
-      { id: 4, name: "士林官邸", img: "https://images.unsplash.com/photo-1582239460064-9b98ea5a8d4d?auto=format&fit=crop&w=600&q=80", tags: ["花園植栽", "自然生態", "歷史文化"], rating: 1200, matches: 0 },
-      { id: 5, name: "大稻埕碼頭", img: "https://images.unsplash.com/photo-1598282367509-c189c445a60e?auto=format&fit=crop&w=600&q=80", tags: ["老街", "歷史文化", "河岸夕陽"], rating: 1200, matches: 0 },
-      { id: 6, name: "淡水老街", img: "https://images.unsplash.com/photo-1603525547464-9040c5f242fc?auto=format&fit=crop&w=600&q=80", tags: ["老街", "在地美食", "河岸風光"], rating: 1200, matches: 0 },
-      { id: 7, name: "剝皮寮歷史街區", img: "https://images.unsplash.com/photo-1610300624021-9989f660ba29?auto=format&fit=crop&w=600&q=80", tags: ["老街", "歷史古蹟", "傳統文化"], rating: 1200, matches: 0 },
-      { id: 8, name: "北投溫泉博物館", img: "https://images.unsplash.com/photo-1580665961635-41e7dc1bf9dc?auto=format&fit=crop&w=600&q=80", tags: ["歷史文化", "溫泉歷史", "日式建築"], rating: 1200, matches: 0 },
-      { id: 9, name: "鐵道部園區", img: "https://images.unsplash.com/photo-1565548348873-1ba81c900dd4?auto=format&fit=crop&w=600&q=80", tags: ["博物館", "歷史建築", "工業機械"], rating: 1200, matches: 0 },
-      { id: 10, name: "故宮博物院", img: "https://images.unsplash.com/photo-1578335359048-2b8dbbe81112?auto=format&fit=crop&w=600&q=80", tags: ["博物館", "歷史文物", "室內展覽"], rating: 1200, matches: 0 },
-      { id: 11, name: "林家花園", img: "https://images.unsplash.com/photo-1624386801905-1823bb1f0925?auto=format&fit=crop&w=600&q=80", tags: ["古典庭園", "歷史古蹟", "散步漫遊"], rating: 1200, matches: 0 },
-      { id: 12, name: "中正紀念堂", img: "https://images.unsplash.com/photo-1563204990-2ee2a321901c?auto=format&fit=crop&w=600&q=80", tags: ["歷史建築", "廣闊廣場", "衛兵交接"], rating: 1200, matches: 0 },
-      { id: 13, name: "華山1914文創園區", img: "https://images.unsplash.com/photo-1618625615712-4fb37707e716?auto=format&fit=crop&w=600&q=80", tags: ["文創展覽", "歷史建築", "特色小店"], rating: 1200, matches: 0 },
-      { id: 14, name: "松山文創園區", img: "https://images.unsplash.com/photo-1588636402008-592f2b45eaf1?auto=format&fit=crop&w=600&q=80", tags: ["文創設計", "歷史建築", "休閒散步"], rating: 1200, matches: 0 },
-      { id: 15, name: "寶藏巖藝術村", img: "https://images.unsplash.com/photo-1628178822088-3330f89d5f76?auto=format&fit=crop&w=600&q=80", tags: ["藝文聚落", "歷史建築", "尋幽探秘"], rating: 1200, matches: 0 },
-      { id: 16, name: "臺北流行音樂中心", img: "https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?auto=format&fit=crop&w=600&q=80", tags: ["現代建築", "音樂展覽", "藝文空間"], rating: 1200, matches: 0 },
-      { id: 17, name: "台北101", img: "https://images.unsplash.com/photo-1543322137-cb299fc881eb?auto=format&fit=crop&w=600&q=80", tags: ["都會地標", "逛街購物", "高空景觀"], rating: 1200, matches: 0 },
-      { id: 18, name: "貓空纜車", img: "https://images.unsplash.com/photo-1586716012837-14e9f736af93?auto=format&fit=crop&w=600&q=80", tags: ["高空景觀", "品茗休閒", "山林風景"], rating: 1200, matches: 0 },
-      { id: 19, name: "碧潭風景區", img: "https://images.unsplash.com/photo-1618331835717-801e976710b2?auto=format&fit=crop&w=600&q=80", tags: ["河岸風光", "踩天鵝船", "吊橋景觀"], rating: 1200, matches: 0 },
-      { id: 20, name: "臺北市立動物園", img: "https://images.unsplash.com/photo-1564348574160-b6f3a7eb762b?auto=format&fit=crop&w=600&q=80", tags: ["主題樂園", "自然生態", "散步漫遊"], rating: 1200, matches: 0 }
+      { id: 1, name: "大安森林公園", img: "daan-forest-park.jpg", tags: ["自然生態", "散步野餐", "市區綠地"], rating: 1200, matches: 0 },
+      { id: 2, name: "象山步道", img: "xiangshan-trail.jpg", tags: ["健行步道", "自然生態", "台北夜景"], rating: 1200, matches: 0 },
+      { id: 3, name: "劍潭山步道", img: "jiantan-mountain-trail.jpg", tags: ["健行步道", "城市景觀", "自然生態"], rating: 1200, matches: 0 },
+      { id: 4, name: "士林官邸", img: "shilin-residence.jpg", tags: ["花園植栽", "自然生態", "歷史文化"], rating: 1200, matches: 0 },
+      { id: 5, name: "大稻埕碼頭", img: "dadaocheng-wharf.jpg", tags: ["老街", "歷史文化", "河岸夕陽"], rating: 1200, matches: 0 },
+      { id: 6, name: "淡水老街", img: "tamsui-old-street.jpg", tags: ["老街", "在地美食", "河岸風光"], rating: 1200, matches: 0 },
+      { id: 7, name: "剝皮寮歷史街區", img: "bopiliao-historical-block.jpg", tags: ["老街", "歷史古蹟", "傳統文化"], rating: 1200, matches: 0 },
+      { id: 8, name: "北投溫泉博物館", img: "beitou-hot-spring-museum.jpg", tags: ["歷史文化", "溫泉歷史", "日式建築"], rating: 1200, matches: 0 },
+      { id: 9, name: "鐵道部園區", img: "railway-department-park.jpg", tags: ["博物館", "歷史建築", "工業機械"], rating: 1200, matches: 0 },
+      { id: 10, name: "故宮博物院", img: "national-palace-museum.jpg", tags: ["博物館", "歷史文物", "室內展覽"], rating: 1200, matches: 0 },
+      { id: 11, name: "林家花園", img: "lin-family-mansion.jpg", tags: ["古典庭園", "歷史古蹟", "散步漫遊"], rating: 1200, matches: 0 },
+      { id: 12, name: "中正紀念堂", img: "chiang-kai-shek-memorial-hall.jpg", tags: ["歷史建築", "廣闊廣場", "衛兵交接"], rating: 1200, matches: 0 },
+      { id: 13, name: "華山1914文創園區", img: "huashan-1914-creative-park.jpg", tags: ["文創展覽", "歷史建築", "特色小店"], rating: 1200, matches: 0 },
+      { id: 14, name: "松山文創園區", img: "songshan-cultural-park.jpg", tags: ["文創設計", "歷史建築", "休閒散步"], rating: 1200, matches: 0 },
+      { id: 15, name: "寶藏巖藝術村", img: "treasure-hill-artist-village.jpg", tags: ["藝文聚落", "歷史建築", "尋幽探秘"], rating: 1200, matches: 0 },
+      { id: 16, name: "臺北流行音樂中心", img: "taipei-music-center.jpg", tags: ["現代建築", "音樂展覽", "藝文空間"], rating: 1200, matches: 0 },
+      { id: 17, name: "台北101", img: "taipei-101.jpg", tags: ["都會地標", "逛街購物", "高空景觀"], rating: 1200, matches: 0 },
+      { id: 18, name: "貓空纜車", img: "maokong-gondola.jpg", tags: ["高空景觀", "品茗休閒", "山林風景"], rating: 1200, matches: 0 },
+      { id: 19, name: "碧潭風景區", img: "bitan-scenic-area.jpg", tags: ["河岸風光", "踩天鵝船", "吊橋景觀"], rating: 1200, matches: 0 },
+      { id: 20, name: "臺北市立動物園", img: "taipei-zoo.jpg", tags: ["主題樂園", "自然生態", "散步漫遊"], rating: 1200, matches: 0 }
     ];
 
     let currentPair = [];
     let voteCount = 0;
 
-    // 將 TAG 陣列轉換為 HTML 標籤
     function renderTags(tagsArray) {
       let tagsHTML = "";
       tagsArray.forEach(tag => {
@@ -121,17 +120,14 @@
       return tagsHTML;
     }
 
-    // 隨機挑選兩個景點 (優先挑選對戰次數少的)
     function pickPair() {
       spots.sort((a, b) => a.matches - b.matches || Math.random() - 0.5);
       currentPair = [spots[0], spots[1]];
       
-      // 更新卡片 A
       document.getElementById('img-a').src = currentPair[0].img;
       document.getElementById('title-a').innerText = currentPair[0].name;
       document.getElementById('tags-a').innerHTML = renderTags(currentPair[0].tags);
       
-      // 更新卡片 B
       document.getElementById('img-b').src = currentPair[1].img;
       document.getElementById('title-b').innerText = currentPair[1].name;
       document.getElementById('tags-b').innerHTML = renderTags(currentPair[1].tags);
@@ -140,7 +136,6 @@
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
-    // 計算 Elo 積分
     function vote(winnerIndex) {
       const loserIndex = winnerIndex === 0 ? 1 : 0;
       const winner = currentPair[winnerIndex];
@@ -159,7 +154,6 @@
       pickPair(); 
     }
 
-    // 顯示排名 (已移除分數顯示)
     function showRanking() {
       document.getElementById('game-screen').style.display = 'none';
       document.getElementById('result-screen').style.display = 'block';
@@ -167,10 +161,7 @@
       const list = document.getElementById('ranking-list');
       list.innerHTML = "";
       
-      // 依照積分高低排序
       let sortedSpots = [...spots].sort((a, b) => b.rating - a.rating);
-      
-      // 只列出前 10 名避免畫面太長
       let topSpots = sortedSpots.slice(0, 10);
       
       topSpots.forEach((spot, index) => {
@@ -189,14 +180,12 @@
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
-    // 繼續遊戲
     function continueGame() {
       document.getElementById('result-screen').style.display = 'none';
       document.getElementById('game-screen').style.display = 'flex';
       pickPair();
     }
 
-    // 網頁載入時啟動
     window.onload = pickPair;
   </script>
 </body>
