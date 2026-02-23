@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>景點喜好大對決</title>
+  <style>
+    * { box-sizing: border-box; font-family: "PingFang TC", "微軟正黑體", sans-serif; }
+    body { margin: 0; background-color: #f4f6f9; display: flex; justify-content: center; }
+    .container { width: 100%; max-width: 500px; min-height: 100vh; background: #fff; padding: 20px; display: flex; flex-direction: column; }
+    header { text-align: center; margin-bottom: 20px; }
+    h1 { font-size: 26px; color: #2c3e50; }
+    .status { font-size: 16px; color: #666; background: #e9ecef; padding: 5px 15px; border-radius: 20px; display: inline-block; }
+    
+    .card-container { display: flex; flex-direction: column; gap: 15px; flex-grow: 1; }
+    .card { border: 2px solid #e0e0e0; border-radius: 12px; overflow: hidden; cursor: pointer; transition: 0.2s; background: #fff;}
+    .card:active { border-color: #4a90e2; transform: scale(0.98); }
+    .card img { width: 100%; height: 160px; object-fit: cover; }
+    .card-content { padding: 12px; text-align: center; }
+    .card-title { font-size: 22px; margin: 0 0 5px 0; color: #333; }
+    
+    .vs-badge { text-align: center; font-size: 18px; font-weight: bold; color: #aaa; margin: -5px 0; }
+    
+    .action-btn { background: #ff7675; color: white; border: none; padding: 15px; font-size: 18px; border-radius: 10px; width: 100%; margin-top: 20px; cursor: pointer; font-weight: bold; }
+    .action-btn.secondary { background: #74b9ff; margin-top: 10px; }
+    
+    #result-screen { display: none; }
+    .rank-item { display: flex; align-items: center; padding: 10px; border-bottom: 1px solid #eee; }
+    .rank-num { font-size: 24px; font-weight: bold; color: #d63031; width: 40px; }
+    .rank-info { flex-grow: 1; }
+    .rank-title { font-size: 18px; font-weight: bold; margin: 0; }
+    .rank-score { font-size: 14px; color: #888; margin: 0; }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <header>
+      <h1>去哪裡𨑨迌？大對決</h1>
+      <div class="status" id="round-text">已進行 0 次選擇</div>
+    </header>
+
+    <div id="game-screen" class="card-container">
+      <div class="card" onclick="vote(0)">
+        <img id="img-a" src="">
+        <div class="card-content"><h2 class="card-title" id="title-a">載入中...</h2></div>
+      </div>
+      <div class="vs-badge">VS</div>
+      <div class="card" onclick="vote(1)">
+        <img id="img-b" src="">
+        <div class="card-content"><h2 class="card-title" id="title-b">載入中...</h2></div>
+      </div>
+      
+      <button class="action-btn" onclick="showRanking()">不想選了，看目前排名結果</button>
+    </div>
+
+    <div id="result-screen">
+      <h2>🏆 你的專屬景點排行榜</h2>
+      <div id="ranking-list"></div>
+      <button class="action-btn secondary" onclick="continueGame()">繼續對戰微調排名</button>
+    </div>
+  </div>
+
+  <script>
+    // 景點資料庫 (加入隱藏的 Elo 積分屬性 rating)
+    let spots = [
+      { id: 1, name: "台北101", img: "https://via.placeholder.com/600x400/FFDDC1/333333?text=台北101", rating: 1200, matches: 0 },
+      { id: 2, name: "大稻埕碼頭", img: "https://via.placeholder.com/600x400/D4F0F0/333333?text=大稻埕碼頭", rating: 1200, matches: 0 },
+      { id: 3, name: "大安森林公園", img: "https://via.placeholder.com/600x400/D1E8E2/333333?text=大安森林公園", rating: 1200, matches: 0 },
+      { id: 4, name: "淡水老街", img: "https://via.placeholder.com/600x400/FFB6B9/333333?text=淡水老街", rating: 1200, matches: 0 },
+      { id: 5, name: "貓空纜車", img: "https://via.placeholder.com/600x400/D7C49E/333333?text=貓空纜車", rating: 1200, matches: 0 },
+      { id: 6, name: "象山步道", img: "https://via.placeholder.com/600x400/C8E6C9/333333?text=象山步道", rating: 1200, matches: 0 },
+      { id: 7, name: "華山文創園區", img: "https://via.placeholder.com/600x400/FFD3B6/333333?text=華山文創", rating: 1200, matches: 0 },
+      { id: 8, name: "故宮博物院", img: "https://via.placeholder.com/600x400/FFF8CD/333333?text=故宮博物院", rating: 1200, matches: 0 }
+    ];
+
+    let currentPair = [];
+    let voteCount = 0;
+
+    // 隨機挑選兩個景點 (優先挑選對戰次數少的，讓資料更均勻)
+    function pickPair() {
+      spots.sort((a, b) => a.matches - b.matches || Math.random() - 0.5);
+      currentPair = [spots[0], spots[1]];
+      
+      document.getElementById('img-a').src = currentPair[0].img;
+      document.getElementById('title-a').innerText = currentPair[0].name;
+      document.getElementById('img-b').src = currentPair[1].img;
+      document.getElementById('title-b').innerText = currentPair[1].name;
+      
+      document.getElementById('round-text').innerText = `已進行 ${voteCount} 次選擇`;
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    // 計算 Elo 積分
+    function vote(winnerIndex) {
+      const loserIndex = winnerIndex === 0 ? 1 : 0;
+      const winner = currentPair[winnerIndex];
+      const loser = currentPair[loserIndex];
+
+      // Elo 公式參數
+      const K = 32; 
+      const expectedWinner = 1 / (1 + Math.pow(10, (loser.rating - winner.rating) / 400));
+      const expectedLoser = 1 / (1 + Math.pow(10, (winner.rating - loser.rating) / 400));
+
+      // 更新積分與對戰次數
+      winner.rating = Math.round(winner.rating + K * (1 - expectedWinner));
+      loser.rating = Math.round(loser.rating + K * (0 - expectedLoser));
+      winner.matches++;
+      loser.matches++;
+      voteCount++;
+
+      pickPair(); // 進入下一輪
+    }
+
+    // 顯示排名
+    function showRanking() {
+      document.getElementById('game-screen').style.display = 'none';
+      document.getElementById('result-screen').style.display = 'block';
+      
+      const list = document.getElementById('ranking-list');
+      list.innerHTML = "";
+      
+      // 依照積分高低排序
+      let sortedSpots = [...spots].sort((a, b) => b.rating - a.rating);
+      
+      sortedSpots.forEach((spot, index) => {
+        list.innerHTML += `
+          <div class="rank-item">
+            <div class="rank-num">${index + 1}</div>
+            <div class="rank-info">
+              <p class="rank-title">${spot.name}</p>
+              <p class="rank-score">喜好積分: ${spot.rating} (比較 ${spot.matches} 次)</p>
+            </div>
+          </div>
+        `;
+      });
+    }
+
+    function continueGame() {
+      document.getElementById('result-screen').style.display = 'none';
+      document.getElementById('game-screen').style.display = 'flex';
+      pickPair();
+    }
+
+    window.onload = pickPair;
+  </script>
+</body>
+</html>
